@@ -53,7 +53,7 @@ El proyecto sigue principios de **Clean Architecture**, dividiendo responsabilid
 
 ---
 
-## 🚀 Base de datos
+##  Base de datos
 
 La configuración de acceso a la base de datos en aplication.properties sera enviada al correo.
 
