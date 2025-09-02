@@ -25,6 +25,7 @@ public class User {
     //Account Params
     @Column(unique = true, nullable = false)
     private String email;
+
     @Column(nullable = false)
     @Size(min = 8, max = 16, message = "The password must be between 8 and 16 characters")
     @Pattern(

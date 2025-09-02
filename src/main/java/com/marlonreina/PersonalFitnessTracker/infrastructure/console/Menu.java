@@ -8,6 +8,7 @@ import com.marlonreina.PersonalFitnessTracker.application.usecase.user.UserRegis
 import com.marlonreina.PersonalFitnessTracker.application.usecase.workout.WorkoutListAllLoggedUseCase;
 import com.marlonreina.PersonalFitnessTracker.application.usecase.workout.WorkoutLogUseCase;
 import com.marlonreina.PersonalFitnessTracker.application.usecase.workout.WorkoutsAllListUseCase;
+import com.marlonreina.PersonalFitnessTracker.domain.model.User;
 import com.marlonreina.PersonalFitnessTracker.infrastructure.dto.exercise.request.ExerciseDeleteRequest;
 import com.marlonreina.PersonalFitnessTracker.infrastructure.dto.exercise.request.ExerciseRegisterRequest;
 import com.marlonreina.PersonalFitnessTracker.infrastructure.dto.exercise.response.ExerciseDTO;
@@ -20,16 +21,23 @@ import com.marlonreina.PersonalFitnessTracker.infrastructure.dto.workout.request
 import com.marlonreina.PersonalFitnessTracker.infrastructure.dto.workout.response.WorkoutDTO;
 import com.marlonreina.PersonalFitnessTracker.infrastructure.dto.workoutlog.WorkoutLogDTO;
 import com.marlonreina.PersonalFitnessTracker.infrastructure.dto.workoutlog.WorkoutLogExerciseDTO;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
 @Component
 public class Menu implements CommandLineRunner {
+
+
+    private final Validator validator;
 
     private final Scanner scanner = new Scanner(System.in);
     private final UserRegisterUseCase userRegisterUseCase;
@@ -43,7 +51,9 @@ public class Menu implements CommandLineRunner {
     private UserDTO currentUser;
 
 
-    public Menu(UserRegisterUseCase userRegisterUseCase, UserLoginUseCase userLoginUseCase, WorkoutsAllListUseCase workoutsAllListUseCase, WorkoutLogUseCase workoutLogUseCase, WorkoutListAllLoggedUseCase workoutListAllLoggedUseCase, ExerciseListAllUseCase exerciseListAllUseCase, ExerciseAddUseCase exerciseAddUseCase, ExerciseDeleteUseCase exerciseDeleteUseCase) {
+    public Menu(Validator validator, UserRegisterUseCase userRegisterUseCase, UserLoginUseCase userLoginUseCase, WorkoutsAllListUseCase workoutsAllListUseCase, WorkoutLogUseCase workoutLogUseCase, WorkoutListAllLoggedUseCase workoutListAllLoggedUseCase, ExerciseListAllUseCase exerciseListAllUseCase, ExerciseAddUseCase exerciseAddUseCase, ExerciseDeleteUseCase exerciseDeleteUseCase) {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        this.validator = (Validator) factory.getValidator();
         this.userRegisterUseCase = userRegisterUseCase;
         this.userLoginUseCase = userLoginUseCase;
         this.workoutsAllListUseCase = workoutsAllListUseCase;
@@ -52,6 +62,18 @@ public class Menu implements CommandLineRunner {
         this.exerciseListAllUseCase = exerciseListAllUseCase;
         this.exerciseAddUseCase = exerciseAddUseCase;
         this.exerciseDeleteUseCase = exerciseDeleteUseCase;
+    }
+
+    private boolean validateUser(RegisterUserRequest request) {
+        Set<ConstraintViolation<RegisterUserRequest>> violations = validator.validate(request);
+
+        if (!violations.isEmpty()) {
+            for (ConstraintViolation<RegisterUserRequest> v : violations) {
+                System.out.println("Error: " + v.getMessage());
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -101,7 +123,7 @@ public class Menu implements CommandLineRunner {
 
         System.out.println("Sex (M/F): ");
         String sex = scanner.nextLine();
-        if (!sex.equals("M") && !sex.equals("F")) {
+        if (!sex.equalsIgnoreCase("M") && !sex.equalsIgnoreCase("F")) {
             System.out.println("Invalid sex, must be M or F.");
             return;
         }
@@ -118,6 +140,10 @@ public class Menu implements CommandLineRunner {
         request.setSex(sex);
         request.setEmail(email);
         request.setPassword(password);
+
+        if (!validateUser(request)) {
+            return;
+        }
 
         try {
             var registeredUser = userRegisterUseCase.execute(request);
